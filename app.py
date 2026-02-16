@@ -451,16 +451,16 @@ def insert_registro_bitacora(respuestas, id_proyecto, fotos=None, videos=None):
         if conn:
             conn.close()
 
-def create_project(user_id, nombre, fecha_inicio, fecha_fin, director, ubicacion, coordenadas):
+def create_project(user_id, nombre, fecha_inicio, fecha_fin, director, ubicacion, coordenadas, cliente, numero_proyecto):
     try:
         conn = psycopg2.connect(**POSTGRES_CONFIG)
         #conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute(
-            """INSERT INTO proyectos (nombre_proyecto, fecha_inicio, fecha_fin, director_obra, ubicacion, coordenadas, user_id)
-               VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id_proyecto""",
-            (nombre, fecha_inicio, fecha_fin, director, ubicacion, coordenadas, user_id)
+            """INSERT INTO proyectos (nombre_proyecto, fecha_inicio, fecha_fin, director_obra, ubicacion, coordenadas, user_id, cliente, numero_proyecto)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id_proyecto""",
+            (nombre, fecha_inicio, fecha_fin, director, ubicacion, coordenadas, user_id, cliente, numero_proyecto)
         )
         
         project_id = cursor.fetchone()[0]
@@ -973,6 +973,8 @@ def add_project():
                 'director': request.form['director'],
                 'location': request.form['location'],
                 'coordinates': request.form['coordinates'],
+                'cliente': request.form['cliente'],
+                'numero_proyecto': request.form['numero-proyecto'],
                 'user_id': session['user_id']  # ID del usuario actual
             }
             
@@ -984,7 +986,9 @@ def add_project():
                 project_data['end_date'],
                 project_data['director'],
                 project_data['location'],
-                project_data['coordinates']
+                project_data['coordinates'],
+                project_data['cliente'],
+                project_data['numero_proyecto']
             )
             
             if project_id:
