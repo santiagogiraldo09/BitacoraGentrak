@@ -127,13 +127,13 @@ button {
 }
 
 #start-camera, #take-photo, #save-record {
-    background-color: #FF6600;
-    color: white;
+    background-color: #FFAF33;
+    color: black;
 }
 
 #save-record-form, #start-camera-form{
     background-color: #FFAF33;
-    color: white;
+    color: black;
 }
 
 

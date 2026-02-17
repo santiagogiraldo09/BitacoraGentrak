@@ -100,52 +100,48 @@
                     {% for registro in registros %}
                     <div class="record-details">
                         <input type="checkbox" name="registro_ids" value="{{ registro.id }}" class="registro-checkbox">
-                        <h3>Código de registro: {{ registro.id }}</h3>
+                        
+                        <h3 style="color: #000000;">Ítem #{{ registro.item_numero }} - {{ registro.edificacion_zona }}</h3>
+
                         <div class="record-field">
-                            <label>Tipo de informe:</label>
-                            <span>{{ registro.zona_intervencion }}</span>
+                            <label>Área Inspeccionada:</label>
+                            <span>{{ registro.area_inspeccionada }}</span>
                         </div>
                         <div class="record-field">
-                            <label>Sede:</label>
-                            <span>{{ registro.items_value }}</span>
+                            <label>Especificación Técnica:</label>
+                            <span>{{ registro.especificacion_tecnica }}</span>
                         </div>
                         <div class="record-field">
-                            <label>Repuestos utilizados:</label>
-                            <span>{{ registro.metros_lineales }}</span>
+                            <label>Condición Observada:</label>
+                            <span>{{ registro.condicion_observada }}</span>
                         </div>
                         <div class="record-field">
-                            <label>Repuestos a cotizar:</label>
-                            <span>{{ registro.proximas_tareas }}</span>
+                            <label>¿Cumple?:</label>
+                            <span style="font-weight: bold; color: #000000;">
+                                {{ registro.cumple }}
+                            </span>
+                        </div>
+                        <div class="record-field">
+                            <label>Observaciones:</label>
+                            <span>{{ registro.observaciones }}</span>
+                        </div>
+                        <div class="record-field">
+                            <label>Acciones Correctivas:</label>
+                            <span>{{ registro.acciones_correctivas if registro.acciones_correctivas else 'N/A' }}</span>
                         </div>
 
                         <div class="evidencia-container">
-                            <label>Evidencia:</label>
-                            
-                            <div class="media-gallery">
-                                {% for foto in registro.fotos %}
-                                    <div class="media-item">
-                                        <img src="{{ foto.file_data }}" alt="Evidencia fotográfica">
-                                        {% if foto.description %}
-                                            <p class="media-description">{{ foto.description }}</p>
-                                        {% endif %}
-                                    </div>
-                                {% endfor %}
-
-                                {% for video in registro.videos %}
-                                    <div class="media-item">
-                                        <video controls playsinline preload="metadata">
-                                            <source src="{{ video.file_data }}">
-                                            Tu navegador no soporta la reproducción de video.
-                                        </video>
-                                        {% if video.description %}
-                                            <p class="media-description">{{ video.description }}</p>
-                                        {% endif %}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                            
-                            {% if not registro.fotos and not registro.videos %}
-                                <p><small>No hay evidencia multimedia para este registro.</small></p>
+                            {% if registro.fotos %}
+                                <div class="media-gallery">
+                                    {% for foto in registro.fotos %}
+                                        <div class="media-item">
+                                            <img src="data:image/png;base64,{{ foto.file_data }}" alt="Foto">
+                                            {% if foto.description %}
+                                                <p class="media-description">{{ foto.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
                             {% endif %}
                         </div>
                     </div>

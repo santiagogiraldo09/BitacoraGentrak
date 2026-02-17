@@ -1129,63 +1129,74 @@ function isIOS() {
 }
 
 function saveRecord() {
+    console.log("!!! SEÑAL RECIBIDA: Iniciando saveRecord !!!");
+    alert("Ejecutando función de guardado");
     const loadingOverlay = document.getElementById('loading-overlay');
     const saveButton = document.getElementById('save-record');
+    
+    // 1. Capturar la zona global (común para todos los ítems de este reporte)
+    const zonaGlobal = document.getElementById('global_edificacion').value;
+
+    if (!zonaGlobal) {
+        alert("Por favor, ingrese la Edificación / Zona antes de guardar.");
+        return;
+    }
+
     loadingOverlay.style.display = 'flex';
     saveButton.disabled = true;
     saveButton.textContent = "Guardando...";
 
     const projectId = new URLSearchParams(window.location.search).get("project_id");
-    const respuestas = {
-        zona_intervencion: document.getElementById('question_0').value,
-        items:             document.getElementById('question_1').value,
-        metros_lineales:   document.getElementById('question_2').value,
-        proximas_tareas:   document.getElementById('question_3').value
-    };
 
-    // ===================================================================
-    //            INICIO DE LA CORRECCIÓN - RECOLECCIÓN DE DATOS
-    // ===================================================================
-    // En lugar de solo filtrar, ahora recorremos cada item para buscar su descripción.
+    // 2. Recolectar todos los ítems dinámicos de las tarjetas
+    const itemsReporte = [];
+    const tarjetas = document.querySelectorAll('.dynamic-item-box');
 
+    tarjetas.forEach((tarjeta, index) => {
+        itemsReporte.push({
+            item_numero: index + 1,
+            edificacion_zona: zonaGlobal, // Se asigna el valor global a cada fila
+            area_inspeccionada: tarjeta.querySelector('.field-elemento').value,
+            especificacion_tecnica: tarjeta.querySelector('.field-especificacion').value,
+            condicion_observada: tarjeta.querySelector('.field-condicion').value,
+            cumple: tarjeta.querySelector('.field-cumple').value,
+            observaciones: tarjeta.querySelector('.field-observaciones').value,
+            acciones_correctivas: tarjeta.querySelector('.field-acciones').value
+        });
+    });
+
+    // 3. Recolectar fotos y videos (mantenemos tu lógica corregida)
     const finalPhotos = [];
     capturedPhotos.forEach((fileData, index) => {
-        // Solo procesamos la foto si no ha sido eliminada (no es nula)
         if (fileData !== null) {
-            // Buscamos su campo de descripción por el ID único que creamos (ej. "photo_desc_0")
             const descriptionInput = document.getElementById(`photo_desc_${index}`);
-            
             finalPhotos.push({
-                file_data: fileData, // El archivo en base64
-                description: descriptionInput ? descriptionInput.value : "" // El texto de la descripción
+                file_data: fileData,
+                description: descriptionInput ? descriptionInput.value : ""
             });
         }
     });
 
     const finalVideos = [];
     capturedVideos.forEach((fileData, index) => {
-        // Hacemos lo mismo para los videos
         if (fileData !== null) {
             const descriptionInput = document.getElementById(`video_desc_${index}`);
-            
             finalVideos.push({
-                file_data: fileData, // El video en base64
-                description: descriptionInput ? descriptionInput.value : "" // Su descripción
+                file_data: fileData,
+                description: descriptionInput ? descriptionInput.value : ""
             });
         }
     });
 
-    // ===================================================================
-    //                         FIN DE LA CORRECCIÓN
-    // ===================================================================
-
+    // 4. Construir el nuevo Payload para 'reporte_fiscalizacion'
     const payload = {
-        respuestas: respuestas,
-        fotos: finalPhotos,   // Ahora es un array de objetos {file_data, description}
-        videos: finalVideos,  // Ahora es un array de objetos {file_data, description}
-        project_id: projectId
+        project_id: projectId,
+        items: itemsReporte, // Lista de ítems dinámicos
+        fotos: finalPhotos,
+        videos: finalVideos
     };
 
+    // 5. Enviar al endpoint (asegúrate de que en app.py el endpoint sea el correcto)
     fetch('/guardar-registro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1197,7 +1208,7 @@ function saveRecord() {
     })
     .then(data => {
         loadingOverlay.style.display = 'none';
-        alert(data.mensaje || "¡Registro guardado exitosamente!");
+        alert(data.mensaje || "¡Inspección guardada exitosamente!");
         window.location.href = '/registros';
     })
     .catch(error => {

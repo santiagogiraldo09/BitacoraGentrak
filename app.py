@@ -919,7 +919,7 @@ def historialregistro():
     
     if not project_id:
         flash("No se proporcionó el ID del proyecto", "error")
-        return redirect(url_for('history'))
+        return redirect(url_for('registros')) # Ajustado a tu ruta de lista de proyectos
 
     registros = []
     conn = None
@@ -927,48 +927,43 @@ def historialregistro():
         conn = psycopg2.connect(**POSTGRES_CONFIG)
         cursor = conn.cursor()
 
-        # 1. Obtener los registros principales (sin cambios aquí)
+        # 1. Obtener los registros de la NUEVA TABLA reporte_fiscalizacion
         cursor.execute("""
-            SELECT id_registro, zona_intervencion, items, metros_lineales, proximas_tareas
-            FROM registrosbitacoraeqing
+            SELECT id_reporte, edificacion_zona, item_numero, area_inspeccionada, 
+                   especificacion_tecnica, condicion_observada, cumple, 
+                   observaciones, acciones_correctivas
+            FROM reporte_fiscalizacion
             WHERE id_proyecto = %s
-            ORDER BY id_registro DESC
+            ORDER BY id_reporte DESC
         """, (project_id,))
         
         registros_principales = cursor.fetchall()
 
-        # 2. Para cada registro, obtener sus fotos y videos CON SUS DESCRIPCIONES
+        # 2. Para cada registro, obtener sus fotos y videos
         for row in registros_principales:
-            id_registro = row[0]
+            id_reporte = row[0]
             
-            # --- LÓGICA DE FOTOS ACTUALIZADA ---
-            # Ahora seleccionamos también la columna 'description'
-            cursor.execute("SELECT imagen_base64, description FROM fotos_registro WHERE id_registro = %s", (id_registro,))
-            fotos = []
-            for item in cursor.fetchall():
-                fotos.append({
-                    'file_data': item[0],   # El archivo en base64
-                    'description': item[1]  # La nueva descripción
-                })
+            # Buscamos fotos (id_registro en tu tabla de fotos ahora contiene el id_reporte)
+            cursor.execute("SELECT imagen_base64, description FROM fotos_registro WHERE id_registro = %s", (id_reporte,))
+            fotos = [{'file_data': item[0], 'description': item[1]} for item in cursor.fetchall()]
             
-            # --- LÓGICA DE VIDEOS ACTUALIZADA ---
-            # Hacemos lo mismo para los videos
-            cursor.execute("SELECT video_base64, description FROM videos_registro WHERE id_registro = %s", (id_registro,))
-            videos = []
-            for item in cursor.fetchall():
-                videos.append({
-                    'file_data': item[0],   # El video en base64
-                    'description': item[1]  # La nueva descripción
-                })
+            # Buscamos videos
+            cursor.execute("SELECT video_base64, description FROM videos_registro WHERE id_registro = %s", (id_reporte,))
+            videos = [{'file_data': item[0], 'description': item[1]} for item in cursor.fetchall()]
 
+            # Mapeamos los datos con los nombres de la nueva tabla
             registros.append({
-                'id': id_registro,
-                'zona_intervencion': row[1],
-                'items_value': row[2],
-                'metros_lineales': row[3],
-                'proximas_tareas': row[4],
-                'fotos': fotos,   # Ahora es una lista de objetos
-                'videos': videos  # Ahora es una lista de objetos
+                'id': id_reporte,
+                'edificacion_zona': row[1],
+                'item_numero': row[2],
+                'area_inspeccionada': row[3],
+                'especificacion_tecnica': row[4],
+                'condicion_observada': row[5],
+                'cumple': row[6],
+                'observaciones': row[7],
+                'acciones_correctivas': row[8],
+                'fotos': fotos,
+                'videos': videos
             })
 
     except Exception as e:
@@ -1049,26 +1044,119 @@ def ask_question_route():
     else:
         return jsonify({'error': 'Error al sintetizar la pregunta.'}), 500
 
+
+@app.route('/guardar-inspeccion', methods=['POST'])
+def guardar_inspeccion():
+    try:
+        data = request.json
+        project_id = data.get('project_id')
+        items = data.get('items', [])
+
+        if not project_id or not items:
+            return jsonify({'success': False, 'error': 'Datos incompletos'}), 400
+
+        conn = psycopg2.connect(**POSTGRES_CONFIG)
+        cursor = conn.cursor()
+
+        for item in items:
+            cursor.execute("""
+                INSERT INTO reporte_fiscalizacion (
+                    id_proyecto, 
+                    edificacion_zona, 
+                    item_numero, 
+                    area_inspeccionada, 
+                    especificacion_tecnica, 
+                    condicion_observada, 
+                    cumple, 
+                    observaciones, 
+                    acciones_correctivas
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                project_id,
+                item['edificacion_zona'],
+                item['item_numero'],
+                item['area_inspeccionada'],
+                item['especificacion_tecnica'],
+                item['condicion_observada'],
+                item['cumple'],
+                item['observaciones'],
+                item['acciones_correctivas']
+            ))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'success': True, 'mensaje': 'Inspección guardada correctamente'})
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/guardar-registro', methods=['POST'])
 def guardar_registro():
+    conn = None
     try:
         data = request.get_json()
-        print("Datos recibidos:", data)  # 🐞 DEBUG
-        respuestas = data.get('respuestas')
+        project_id = data.get('project_id')
+        items = data.get('items', [])  # Nueva lista de ítems dinámicos
         fotos = data.get('fotos', [])
         videos = data.get('videos', [])
-        project_id = data.get('project_id')
 
-        if not respuestas or not project_id:
-            return jsonify({"error": "Faltan datos requeridos."}), 400
+        if not project_id or not items:
+            return jsonify({"error": "Faltan datos requeridos (Proyecto o Ítems)."}), 400
 
-        # Guardar en PostgreSQL
-        insert_registro_bitacora(respuestas, int(project_id), fotos, videos)
+        conn = psycopg2.connect(**POSTGRES_CONFIG)
+        cursor = conn.cursor()
 
-        return jsonify({"mensaje": "Registro guardado exitosamente!!"}), 200
+        primer_id_reporte = None
+
+        # 1. Guardar cada ítem en la tabla reporte_fiscalizacion
+        for item in items:
+            cursor.execute("""
+                INSERT INTO reporte_fiscalizacion (
+                    id_proyecto, edificacion_zona, item_numero, area_inspeccionada, 
+                    especificacion_tecnica, condicion_observada, cumple, 
+                    observaciones, acciones_correctivas
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id_reporte
+            """, (
+                project_id,
+                item.get('edificacion_zona'),
+                item.get('item_numero'),
+                item.get('area_inspeccionada'),
+                item.get('especificacion_tecnica'),
+                item.get('condicion_observada'),
+                item.get('cumple'),
+                item.get('observaciones'),
+                item.get('acciones_correctivas')
+            ))
+            res = cursor.fetchone()
+            if primer_id_reporte is None:
+                primer_id_reporte = res[0]
+
+        # 2. Guardar Fotos (vinculadas al primer item del reporte para no perder la funcionalidad)
+        for foto_obj in fotos:
+            cursor.execute(
+                "INSERT INTO fotos_registro (id_registro, imagen_base64, description) VALUES (%s, %s, %s)",
+                (primer_id_reporte, foto_obj.get('file_data'), foto_obj.get('description'))
+            )
+
+        # 3. Guardar Videos
+        for video_obj in videos:
+            cursor.execute(
+                "INSERT INTO videos_registro (id_registro, video_base64, description) VALUES (%s, %s, %s)",
+                (primer_id_reporte, video_obj.get('file_data'), video_obj.get('description'))
+            )
+
+        conn.commit()
+        return jsonify({"mensaje": "¡Inspección multimedia guardada exitosamente!"}), 200
 
     except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: conn.close()
 
 @app.route('/eliminar-proyecto', methods=['POST'])
 def eliminar_proyecto():
