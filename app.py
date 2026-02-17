@@ -659,10 +659,43 @@ def login():
     else:
         flash('Email o contraseña incorrectos', 'error')
         return redirect(url_for('principalscreen'))
-
+"""
 @app.route('/index')
 def index():
     return render_template('index.html')
+"""
+
+@app.route('/index')
+def index():
+    if 'user_id' not in session:
+        return redirect(url_for('principalscreen'))
+    
+    project_id = request.args.get('project_id')
+    project_info = None
+    
+    if project_id:
+        try:
+            conn = psycopg2.connect(**POSTGRES_CONFIG)
+            cursor = conn.cursor()
+            # Consultamos las columnas exactas de tu tabla según las imágenes
+            cursor.execute("""
+                SELECT nombre_proyecto, cliente, numero_proyecto, ubicacion 
+                FROM proyectos 
+                WHERE id_proyecto = %s
+            """, (project_id,))
+            row = cursor.fetchone()
+            if row:
+                project_info = {
+                    'nombre': row[0],
+                    'cliente': row[1],
+                    'numero': row[2],
+                    'ubicacion': row[3]
+                }
+            conn.close()
+        except Exception as e:
+            print(f"Error al obtener info del proyecto: {e}")
+
+    return render_template('index.html', project=project_info)
 
 def obtener_token():
     """Obtiene un token de autenticación de Bentley."""
