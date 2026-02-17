@@ -1,52 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Bitácora</title>
+    <title>Registro de Inspección de Obra</title>
     <link rel="icon" href="{{ url_for('static', filename='logo.png') }}" type="image/x-icon">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
-    .photo-thumbnail-wrapper {
-        display: flex; /* 1. Cambiamos a Flexbox */
-        flex-direction: column; /* 2. Apilamos los elementos internos verticalmente */
-        align-items: center; /* 3. Centramos los elementos internos horizontalmente (en el eje cruzado) */
-        justify-content: center; /* Opcional: Centra verticalmente si hay espacio extra */
-        width: 200px; /* Mantener el ancho fijo */
-        margin-top: 10px;
-        border: 1px solid #ddd; /* Añadir un borde sutil para visualización */
-        border-radius: 8px; /* Bordes redondeados */
-        padding: 5px; /* Pequeño relleno interno */
-        background-color: #f9f9f9; /* Fondo claro */
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Sombra suave */
+    /* Estilos para las tarjetas de ítems dinámicos */
+    .dynamic-item-box {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-bottom: 25px;
+        border-radius: 10px;
+        background-color: #fcfcfc;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
-
-    .thumbnail-image {
-        width: 100%; /* Ocupa todo el ancho disponible del wrapper */
-        height: 150px; /* Establece una altura fija para todas las miniaturas */
-        object-fit: cover; /* Recorta la imagen/video para cubrir el espacio sin distorsión */
-        border-radius: 4px; /* Un poco de borde redondeado para la imagen/video */
-        margin-bottom: 5px; /* Espacio entre la imagen/video y los botones de control */
-    }
-
-    .photo-controls {
-        margin-top: 4px;
+    .item-header {
         display: flex;
         justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #1CA3EC;
+        margin-bottom: 15px;
+        padding-bottom: 5px;
     }
-
-    .photo-button {
-        font-size: 16px;
-        padding: 2px 6px;
-        border: none;
-        background: white;
-        border-radius: 50%;
-        cursor: pointer;
-        box-shadow: 0 0 3px rgba(0,0,0,0.3);
-        width: 32px;
-        height: 32px;
-        line-height: 1;
+    .item-header h3 {
+        margin: 0;
+        color: #1CA3EC;
+    }
+    .photo-thumbnail-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 200px;
+        margin-top: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 5px;
+        background-color: #f9f9f9;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .thumbnail-image {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-bottom: 5px;
     }
 </style>
 </head>
@@ -56,60 +56,19 @@
             <div id="logo-container">
                 <img src="{{ url_for('static', filename='logo.png') }}" id="logo" alt="Logo">
             </div>
-            <h1>Registro de Actividades</h1>
+            <h1>Inspección Técnica de Obra</h1>
         </header>
 
         <input type="hidden" id="project-name">
 
         <div id="form-container">
-            
-            <div class="form-group">
-                <label for="question_0">Tipo de informe:</label>
-                <div class="input-with-icon">
-                    <input type="text" id="question_0">
-                    <button class="record-btn" data-target-input="question_0" title="Grabar respuesta">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <button class="stop-btn" data-target-input="question_0" title="Detener grabación" style="display: none;">
-                        <i class="fas fa-stop"></i>
-                    </button>
+            <div id="items-container">
                 </div>
-            </div>
-            <div class="form-group">
-                <label for="question_1">Sede:</label>
-                <div class="input-with-icon">
-                    <input type="text" id="question_1">
-                    <button class="record-btn" data-target-input="question_1" title="Grabar respuesta">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <button class="stop-btn" data-target-input="question_1" title="Detener grabación" style="display: none;">
-                        <i class="fas fa-stop"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="question_2">Repuestos utilizados:</label>
-                <div class="input-with-icon">
-                    <input type="text" id="question_2">
-                    <button class="record-btn" data-target-input="question_2" title="Grabar respuesta">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <button class="stop-btn" data-target-input="question_2" title="Detener grabación" style="display: none;">
-                        <i class="fas fa-stop"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="question_3">Repuestos a cotizar:</label>
-                <div class="input-with-icon">
-                    <input type="text" id="question_3">
-                    <button class="record-btn" data-target-input="question_3" title="Grabar respuesta">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <button class="stop-btn" data-target-input="question_3" title="Detener grabación" style="display: none;">
-                        <i class="fas fa-stop"></i>
-                    </button>
-                </div>
+
+            <div class="centrar" style="margin-bottom: 20px;">
+                <button type="button" id="add-item-btn" class="activate-camera-button" style="background-color: #28a745;">
+                    <i class="fas fa-plus"></i> Añadir Nuevo Ítem
+                </button>
             </div>
             
             <div class="centrar">
@@ -165,10 +124,138 @@
         </div>
     </div>
 
+    <template id="inspection-template">
+        <div class="dynamic-item-box">
+            <div class="item-header">
+                <h3 class="item-title">Ítem #1</h3>
+                <button type="button" class="remove-item-btn" style="background:none; border:none; color:red; cursor:pointer; display:none;">
+                    <i class="fas fa-trash-alt"></i> Eliminar
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label>Elemento / Área Inspeccionada:</label>
+                <div class="input-with-icon">
+                    <input type="text" class="field-elemento">
+                    <button class="record-btn" title="Grabar respuesta"><i class="fas fa-microphone"></i></button>
+                    <button class="stop-btn" title="Detener grabación" style="display: none;"><i class="fas fa-stop"></i></button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Especificación Técnica (Planos / Memoria):</label>
+                <div class="input-with-icon">
+                    <input type="text" class="field-especificacion">
+                    <button class="record-btn" title="Grabar respuesta"><i class="fas fa-microphone"></i></button>
+                    <button class="stop-btn" title="Detener grabación" style="display: none;"><i class="fas fa-stop"></i></button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Condición Observada en Obra:</label>
+                <div class="input-with-icon">
+                    <input type="text" class="field-condicion">
+                    <button class="record-btn" title="Grabar respuesta"><i class="fas fa-microphone"></i></button>
+                    <button class="stop-btn" title="Detener grabación" style="display: none;"><i class="fas fa-stop"></i></button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Cumple (Sí/No):</label>
+                <div class="input-with-icon">
+                    <select class="field-cumple form-input" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                        <option value="">Seleccione...</option>
+                        <option value="Sí">Sí</option>
+                        <option value="No">No</option>
+                        <option value="N/A">N/A</option>
+                    </select>
+                    <button class="record-btn" title="Grabar respuesta"><i class="fas fa-microphone"></i></button>
+                    <button class="stop-btn" title="Detener grabación" style="display: none;"><i class="fas fa-stop"></i></button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Observaciones:</label>
+                <div class="input-with-icon">
+                    <input type="text" class="field-observaciones">
+                    <button class="record-btn" title="Grabar respuesta"><i class="fas fa-microphone"></i></button>
+                    <button class="stop-btn" title="Detener grabación" style="display: none;"><i class="fas fa-stop"></i></button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Acciones Correctivas (si aplica):</label>
+                <div class="input-with-icon">
+                    <input type="text" class="field-acciones">
+                    <button class="record-btn" title="Grabar respuesta"><i class="fas fa-microphone"></i></button>
+                    <button class="stop-btn" title="Detener grabación" style="display: none;"><i class="fas fa-stop"></i></button>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 
     <script>
+        let itemCount = 0;
+
+        function addItem() {
+            itemCount++;
+            const container = document.getElementById('items-container');
+            const template = document.getElementById('inspection-template');
+            const clone = template.content.cloneNode(true);
+            const box = clone.querySelector('.dynamic-item-box');
+            
+            // Actualizar título
+            box.querySelector('.item-title').innerText = `Ítem #${itemCount}`;
+            
+            // Configurar IDs únicos para funciones de voz
+            const inputs = box.querySelectorAll('input');
+            const buttons = box.querySelectorAll('button');
+            
+            inputs.forEach((input, index) => {
+                const uniqueId = `item_${itemCount}_input_${index}`;
+                input.id = uniqueId;
+                // Vincular botones de esa fila al input correspondiente
+                const recordBtn = input.nextElementSibling;
+                const stopBtn = recordBtn.nextElementSibling;
+                recordBtn.setAttribute('data-target-input', uniqueId);
+                stopBtn.setAttribute('data-target-input', uniqueId);
+            });
+
+            // Mostrar botón eliminar si no es el primer ítem
+            if (itemCount > 1) {
+                const removeBtn = box.querySelector('.remove-item-btn');
+                removeBtn.style.display = 'block';
+                removeBtn.onclick = function() {
+                    box.remove();
+                    reindexItems();
+                };
+            }
+
+            container.appendChild(clone);
+            
+            // Re-vincular eventos de voz a los nuevos botones
+            if (typeof setupVoiceButtons === "function") {
+                setupVoiceButtons();
+            }
+        }
+
+        function reindexItems() {
+            const boxes = document.querySelectorAll('.dynamic-item-box');
+            itemCount = 0;
+            boxes.forEach((box) => {
+                itemCount++;
+                box.querySelector('.item-title').innerText = `Ítem #${itemCount}`;
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Generar el primer ítem por defecto
+            addItem();
+
+            document.getElementById('add-item-btn').addEventListener('click', addItem);
+
             const urlParams = new URLSearchParams(window.location.search);
             const projectName = urlParams.get('project');
             if (projectName) {
