@@ -23,7 +23,8 @@ let contadorAmbiental = 0;
 let contadorCalidad = 0;
 
 let currenRecognition = null;
-var itemMediaData = {};
+var itemMediaData = itemMediaData || {};
+var activeItemIdx = activeItemIdx || null;
 var recordedChunks = [];
 
 
@@ -125,22 +126,21 @@ function startVideoRecording() {
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
             options = { mimeType: 'video/webm' };
         }
+        
         let streamToRecord = isIOS() ? new MediaStream([currentStream.getVideoTracks()[0].clone(), ...currentStream.getAudioTracks()]) : currentStream;
-        videoChunks = [];
+        
+        // USAREMOS 'recordedChunks' PARA QUE COINCIDA CON TU OTRA FUNCIÓN
+        window.recordedChunks = []; 
+        
         videoMediaRecorder = new MediaRecorder(streamToRecord, options);
-        videoMediaRecorder.onstop = () => {
-            if (isIOS()) streamToRecord.getTracks().forEach(track => track.stop());
-            const videoBlob = new Blob(videoChunks, { type: options.mimeType });
-            const reader = new FileReader();
-            reader.readAsDataURL(videoBlob);
-            reader.onloadend = () => {
-                capturedVideos.push(reader.result);
-                addVideoThumbnail(reader.result, capturedVideos.length - 1);
-            };
-        };
+        
+        // ESTA LÓGICA DE ONSTOP SE MOVIÓ A LA FUNCIÓN stopVideoRecording() 
+        // PARA EVITAR DUPLICADOS Y ERRORES
+        
         videoMediaRecorder.ondataavailable = event => {
-            if (event.data.size > 0) videoChunks.push(event.data);
+            if (event.data.size > 0) window.recordedChunks.push(event.data);
         };
+        
         videoMediaRecorder.start();
         updateRecordingUI(true);
     } catch (error) {
