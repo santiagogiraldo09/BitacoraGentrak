@@ -1134,24 +1134,30 @@ function renderThumbnails(idx) {
 
 function handleLocalFiles(event, idx, type) {
     const files = event.target.files;
-    if (!files.length) return;
+    if (!files || files.length === 0) return;
 
-    if (!itemMediaData[idx]) {
-        itemMediaData[idx] = { fotos: [], videos: [] };
+    // Usamos window. para asegurar que acceda a la variable global
+    if (!window.itemMediaData[idx]) {
+        window.itemMediaData[idx] = { fotos: [], videos: [] };
     }
 
     Array.from(files).forEach(file => {
         const reader = new FileReader();
         reader.onload = (e) => {
-            const fileData = e.target.result;
+            const base64Data = e.target.result;
             
             if (type === 'foto') {
-                itemMediaData[idx].fotos.push({ file_data: fileData, description: "" });
+                window.itemMediaData[idx].fotos.push({
+                    file_data: base64Data,
+                    description: file.name
+                });
             } else {
-                itemMediaData[idx].videos.push({ file_data: fileData, description: "" });
+                window.itemMediaData[idx].videos.push({
+                    file_data: base64Data,
+                    description: file.name
+                });
             }
-            
-            // Refrescar la vista de miniaturas en la tarjeta
+            // Llamamos al render para mostrar la miniatura inmediatamente
             renderThumbnails(idx);
         };
         reader.readAsDataURL(file);
