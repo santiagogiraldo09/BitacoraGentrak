@@ -22,6 +22,8 @@ let contadorSeguridad = 0;
 let contadorAmbiental = 0;
 let contadorCalidad = 0;
 
+let currenRecognition = null;
+
 // =================================================================
 //          INICIALIZACIÓN DE EVENTOS
 // =================================================================
@@ -899,50 +901,61 @@ async function saveRecordForm() {
 }
 
 function setupVoiceButtons() {
-    // Seleccionamos todos los botones de grabación
-    const recordButtons = document.querySelectorAll('.record-btn');
+    const boxes = document.querySelectorAll('.dynamic-item-box, .form-group');
     
-    recordButtons.forEach(button => {
-        // Limpiamos eventos previos para evitar duplicados
-        button.onclick = null; 
+    boxes.forEach(box => {
+        const recordBtn = box.querySelector('.record-btn');
+        const stopBtn = box.querySelector('.stop-btn');
+        const targetInputId = recordBtn ? recordBtn.getAttribute('data-target-input') : null;
+        const targetInput = document.getElementById(targetInputId);
 
-        button.onclick = function() {
-            const targetId = this.getAttribute('data-target-input');
-            const targetInput = document.getElementById(targetId);
-            
-            if (targetInput) {
-                startVoiceRecognition(targetInput, this);
-            }
-        };
+        if (recordBtn && stopBtn && targetInput) {
+            // Limpiar eventos previos
+            recordBtn.onclick = null;
+            stopBtn.onclick = null;
+
+            recordBtn.onclick = function() {
+                // Ocultar micro, mostrar stop
+                recordBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+                startVoiceRecognition(targetInput, recordBtn, stopBtn);
+            };
+
+            stopBtn.onclick = function() {
+                if (currentRecognition) {
+                    currentRecognition.stop(); // Detiene el dictado manualmente
+                }
+                stopBtn.style.display = 'none';
+                recordBtn.style.display = 'inline-block';
+            };
+        }
     });
 }
 
 // Función auxiliar para el reconocimiento de voz
-function startVoiceRecognition(inputField, button) {
+function startVoiceRecognition(inputField, recordBtn, stopBtn) {
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    currentRecognition = recognition;
+    
     recognition.lang = 'es-ES';
     recognition.interimResults = false;
-
-    recognition.onstart = () => {
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Icono de cargando
-        button.style.color = "red";
-    };
+    recognition.continuous = true; // Permite hablar por más tiempo hasta darle stop
 
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        // Agregamos el texto al input sin borrar lo que ya estaba
+        const transcript = event.results[event.results.length - 1][0].transcript;
         inputField.value += (inputField.value ? ' ' : '') + transcript;
     };
 
     recognition.onend = () => {
-        button.innerHTML = '<i class="fas fa-microphone"></i>';
-        button.style.color = "";
+        // Al terminar (por error o silencio largo), restauramos los botones
+        stopBtn.style.display = 'none';
+        recordBtn.style.display = 'inline-block';
+        currentRecognition = null;
     };
 
     recognition.onerror = (event) => {
-        console.error("Error de reconocimiento:", event.error);
-        button.innerHTML = '<i class="fas fa-microphone"></i>';
-        button.style.color = "";
+        console.error("Error de voz:", event.error);
+        stopBtn.click(); // Forzamos el stop visual
     };
 
     recognition.start();
