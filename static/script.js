@@ -23,8 +23,7 @@ let contadorAmbiental = 0;
 let contadorCalidad = 0;
 
 let currenRecognition = null;
-var itemMediaData = itemMediaData || {};
-var activeItemIdx = activeItemIdx || null;
+var itemMediaData = {};
 var recordedChunks = [];
 
 
