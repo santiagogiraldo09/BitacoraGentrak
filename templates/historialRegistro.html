@@ -135,9 +135,25 @@
                                 <div class="media-gallery">
                                     {% for foto in registro.fotos %}
                                         <div class="media-item">
-                                            <img src="data:image/png;base64,{{ foto.file_data }}" alt="Foto">
+                                            <img src="{{ foto.file_data }}" alt="Foto" style="max-width: 150px; border-radius: 8px;">
                                             {% if foto.description %}
                                                 <p class="media-description">{{ foto.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {% if registro.videos %}
+                                <div class="media-gallery video-gallery" style="margin-top: 10px;">
+                                    {% for video in registro.videos %}
+                                        <div class="media-item video-item">
+                                            <div class="video-placeholder" style="width: 150px; height: 100px; background: #222; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px;">
+                                                <i class="fas fa-video fa-2x"></i>
+                                                <span style="font-size: 10px; margin-top: 5px;">Video Guardado</span>
+                                            </div>
+                                            {% if video.description %}
+                                                <p class="media-description">{{ video.description }}</p>
                                             {% endif %}
                                         </div>
                                     {% endfor %}

@@ -1365,94 +1365,62 @@ function isIOS() {
 }
 
 function saveRecord() {
-    console.log("!!! SEÑAL RECIBIDA: Iniciando saveRecord !!!");
-    alert("Ejecutando función de guardado");
-    const loadingOverlay = document.getElementById('loading-overlay');
-    const saveButton = document.getElementById('save-record');
-    
-    // 1. Capturar la zona global (común para todos los ítems de este reporte)
     const zonaGlobal = document.getElementById('global_edificacion').value;
-
     if (!zonaGlobal) {
         alert("Por favor, ingrese la Edificación / Zona antes de guardar.");
         return;
     }
 
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const saveButton = document.getElementById('save-record');
     loadingOverlay.style.display = 'flex';
     saveButton.disabled = true;
-    saveButton.textContent = "Guardando...";
 
     const projectId = new URLSearchParams(window.location.search).get("project_id");
-
-    // 2. Recolectar todos los ítems dinámicos de las tarjetas
     const itemsReporte = [];
     const tarjetas = document.querySelectorAll('.dynamic-item-box');
 
-    tarjetas.forEach((tarjeta, index) => {
-        const fotosDeEsteItem = [];
+    tarjetas.forEach((tarjeta) => {
+        // Obtenemos el índice real que le asignamos a la tarjeta al crearla
+        const idx = tarjeta.getAttribute('data-index');
+        
+        // Extraemos las fotos y videos del objeto global usando ese índice
+        const fotosItem = window.itemMediaData[idx] ? window.itemMediaData[idx].fotos : [];
+        const videosItem = window.itemMediaData[idx] ? window.itemMediaData[idx].videos : [];
+
         itemsReporte.push({
-            item_numero: index + 1,
-            edificacion_zona: zonaGlobal, // Se asigna el valor global a cada fila
+            edificacion_zona: zonaGlobal,
             area_inspeccionada: tarjeta.querySelector('.field-elemento').value,
             especificacion_tecnica: tarjeta.querySelector('.field-especificacion').value,
             condicion_observada: tarjeta.querySelector('.field-condicion').value,
             cumple: tarjeta.querySelector('.field-cumple').value,
             observaciones: tarjeta.querySelector('.field-observaciones').value,
             acciones_correctivas: tarjeta.querySelector('.field-acciones').value,
-            fotos: fotosDeEsteItem
+            // Ahora la multimedia viaja DENTRO de cada ítem
+            fotos: fotosItem,
+            videos: videosItem
         });
     });
 
-    // 3. Recolectar fotos y videos (mantenemos tu lógica corregida)
-    const finalPhotos = [];
-    capturedPhotos.forEach((fileData, index) => {
-        if (fileData !== null) {
-            const descriptionInput = document.getElementById(`photo_desc_${index}`);
-            finalPhotos.push({
-                file_data: fileData,
-                description: descriptionInput ? descriptionInput.value : ""
-            });
-        }
-    });
-
-    const finalVideos = [];
-    capturedVideos.forEach((fileData, index) => {
-        if (fileData !== null) {
-            const descriptionInput = document.getElementById(`video_desc_${index}`);
-            finalVideos.push({
-                file_data: fileData,
-                description: descriptionInput ? descriptionInput.value : ""
-            });
-        }
-    });
-
-    // 4. Construir el nuevo Payload para 'reporte_fiscalizacion'
     const payload = {
         project_id: projectId,
-        items: itemsReporte, // Lista de ítems dinámicos
-        fotos: finalPhotos,
-        videos: finalVideos
+        items: itemsReporte
     };
 
-    // 5. Enviar al endpoint (asegúrate de que en app.py el endpoint sea el correcto)
     fetch('/guardar-registro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     })
-    .then(response => {
-        if (!response.ok) return response.json().then(err => { throw new Error(err.error || 'Error del servidor') });
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
         loadingOverlay.style.display = 'none';
-        alert(data.mensaje || "¡Inspección guardada exitosamente!");
+        alert("¡Inspección guardada exitosamente!");
         window.location.href = '/registros';
     })
     .catch(error => {
         loadingOverlay.style.display = 'none';
         saveButton.disabled = false;
-        saveButton.textContent = "Guardar registro";
         alert(`Error: ${error.message}`);
     });
 }
