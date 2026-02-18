@@ -749,6 +749,22 @@ function eliminarElemento(button) {
     item.remove();
 }
 
+function deletePhotoFromItem(itemIdx, photoIdx) {
+    // 1. Verificar que el ítem y la foto existan en nuestro objeto de datos
+    if (window.itemMediaData && window.itemMediaData[itemIdx] && window.itemMediaData[itemIdx].fotos) {
+        
+        // 2. Eliminar la foto específica del arreglo usando su índice
+        window.itemMediaData[itemIdx].fotos.splice(photoIdx, 1);
+        
+        // 3. Volver a dibujar las miniaturas de ese ítem para reflejar el cambio
+        renderThumbnails(itemIdx);
+        
+        console.log(`Foto ${photoIdx} eliminada del ítem ${itemIdx}`);
+    } else {
+        console.error("No se pudo encontrar la referencia para eliminar la foto.");
+    }
+}
+
 // ========================================
 // VALIDACIÓN DEL FORMULARIO
 // ========================================
