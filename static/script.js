@@ -1381,24 +1381,29 @@ function saveRecord() {
     const tarjetas = document.querySelectorAll('.dynamic-item-box');
 
     tarjetas.forEach((tarjeta) => {
-        // Obtenemos el índice real que le asignamos a la tarjeta al crearla
+        // 1. Obtenemos el índice de esta tarjeta específica
         const idx = tarjeta.getAttribute('data-index');
         
-        // Extraemos las fotos y videos del objeto global usando ese índice
-        const fotosItem = window.itemMediaData[idx] ? window.itemMediaData[idx].fotos : [];
-        const videosItem = window.itemMediaData[idx] ? window.itemMediaData[idx].videos : [];
+        // 2. Extraemos las fotos y videos que pertenecen SOLO a este índice
+        // Buscamos en la memoria global que configuramos antes
+        const fotosDelItem = (window.itemMediaData && window.itemMediaData[idx]) 
+                             ? window.itemMediaData[idx].fotos : [];
+        const videosDelItem = (window.itemMediaData && window.itemMediaData[idx]) 
+                             ? window.itemMediaData[idx].videos : [];
 
+        // 3. Empujamos toda la información (texto + multimedia) al ítem
         itemsReporte.push({
-            edificacion_zona: zonaGlobal,
+            item_numero: parseInt(idx) + 1,
+            edificacion_zona: zonaGlobal, 
             area_inspeccionada: tarjeta.querySelector('.field-elemento').value,
             especificacion_tecnica: tarjeta.querySelector('.field-especificacion').value,
             condicion_observada: tarjeta.querySelector('.field-condicion').value,
             cumple: tarjeta.querySelector('.field-cumple').value,
             observaciones: tarjeta.querySelector('.field-observaciones').value,
             acciones_correctivas: tarjeta.querySelector('.field-acciones').value,
-            // Ahora la multimedia viaja DENTRO de cada ítem
-            fotos: fotosItem,
-            videos: videosItem
+            // AQUÍ ESTÁ LA CLAVE: Enviamos la multimedia dentro del objeto del ítem
+            fotos: fotosDelItem,
+            videos: videosDelItem
         });
     });
 
