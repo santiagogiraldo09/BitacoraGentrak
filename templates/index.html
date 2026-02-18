@@ -252,6 +252,7 @@
 
             itemCameraBtn.onclick = function() {
                 activeItemIdx = currentIdx;
+                iniciarCamaraDesdeItem();
                 // Mostrar el contenedor de la cámara
                 document.getElementById('camera-container').style.display = 'block';
                 document.querySelector('.action-buttons-wrapper').style.display = 'block';
