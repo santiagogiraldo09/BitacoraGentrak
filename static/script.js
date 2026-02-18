@@ -901,33 +901,48 @@ async function saveRecordForm() {
 }
 
 function setupVoiceButtons() {
+    // Seleccionamos tanto las cajas dinámicas como los grupos de formulario estáticos
     const boxes = document.querySelectorAll('.dynamic-item-box, .form-group');
     
     boxes.forEach(box => {
         const recordBtn = box.querySelector('.record-btn');
         const stopBtn = box.querySelector('.stop-btn');
-        const targetInputId = recordBtn ? recordBtn.getAttribute('data-target-input') : null;
-        const targetInput = document.getElementById(targetInputId);
+        
+        if (recordBtn && stopBtn) {
+            // Intentamos obtener el input de dos formas:
+            // 1. Por el ID definido en data-target-input (usado en el campo global)
+            // 2. Por el input que esté dentro de la misma caja (usado en ítems dinámicos)
+            const targetInputId = recordBtn.getAttribute('data-target-input');
+            const targetInput = targetInputId ? 
+                                document.getElementById(targetInputId) : 
+                                box.querySelector('input');
 
-        if (recordBtn && stopBtn && targetInput) {
-            // Limpiar eventos previos
-            recordBtn.onclick = null;
-            stopBtn.onclick = null;
+            if (targetInput) {
+                // Limpiar eventos previos para evitar ejecuciones duplicadas
+                recordBtn.onclick = null;
+                stopBtn.onclick = null;
 
-            recordBtn.onclick = function() {
-                // Ocultar micro, mostrar stop
-                recordBtn.style.display = 'none';
-                stopBtn.style.display = 'inline-block';
-                startVoiceRecognition(targetInput, recordBtn, stopBtn);
-            };
+                recordBtn.onclick = function() {
+                    // Feedback visual: intercambiar botones
+                    recordBtn.style.display = 'none';
+                    stopBtn.style.display = 'inline-block';
+                    
+                    // Iniciar el reconocimiento de voz pasándole el input correcto
+                    if (typeof startVoiceRecognition === "function") {
+                        startVoiceRecognition(targetInput, recordBtn, stopBtn);
+                    }
+                };
 
-            stopBtn.onclick = function() {
-                if (currentRecognition) {
-                    currentRecognition.stop(); // Detiene el dictado manualmente
-                }
-                stopBtn.style.display = 'none';
-                recordBtn.style.display = 'inline-block';
-            };
+                stopBtn.onclick = function() {
+                    // Detener la instancia global de reconocimiento si existe
+                    if (window.currentRecognition) {
+                        window.currentRecognition.stop();
+                    }
+                    // Restaurar botones visualmente
+                    stopBtn.style.display = 'none';
+                    recordBtn.style.display = 'inline-block';
+                };
+            }
         }
     });
 }
