@@ -30,10 +30,12 @@ let currenRecognition = null;
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // Listener para el botón de activar cámara
+    /*
     document.getElementById('activate-camera-btn').addEventListener('click', () => {
         startCamera();
         document.getElementById('activate-camera-btn').style.display = 'none';
     });
+    */
 
     // Listeners para los controles de la cámara
     document.getElementById('start-record-btn').addEventListener('click', startVideoRecording);
@@ -61,11 +63,11 @@ async function startCamera() {
     const actionButtons = document.querySelector('.action-buttons-wrapper');
     const stopRecordButton = document.getElementById('stop-record-btn');
 
-    // Ocultar/mostrar botones al inicio
+    // Configuración inicial de botones
     document.getElementById('start-record-btn').style.display = 'flex';
     document.getElementById('take-photo').style.display = 'flex';
-    stopRecordButton.style.display = 'none'; // Asegurarse que el de stop esté oculto
-    stopRecordButton.style.backgroundColor = '#e74c3c'; // Restaurar color por si acaso
+    stopRecordButton.style.display = 'none';
+    stopRecordButton.style.backgroundColor = '#e74c3c';
 
     try {
         const constraints = { video: { facingMode: 'environment' }, audio: true };
@@ -78,7 +80,7 @@ async function startCamera() {
     } catch (error) {
         console.error("Error al acceder a la cámara:", error);
         alert("No se pudo acceder a la cámara. Revisa los permisos.");
-        document.getElementById('activate-camera-btn').style.display = 'block';
+        // Eliminada la referencia al botón global que causaba el error
     }
 }
 
@@ -95,18 +97,19 @@ function takePhoto() {
 
     const dataUrl = canvas.toDataURL('image/png');
     
-    // Guardar la foto en nuestro objeto de datos por ítem
     if (activeItemIdx !== null) {
-        if (!itemMediaData[activeItemIdx]) {
-            itemMediaData[activeItemIdx] = { fotos: [], videos: [] };
+        // Inicializar el objeto si no existe para evitar errores de 'undefined'
+        if (!window.itemMediaData) window.itemMediaData = {};
+        if (!window.itemMediaData[activeItemIdx]) {
+            window.itemMediaData[activeItemIdx] = { fotos: [], videos: [] };
         }
         
-        itemMediaData[activeItemIdx].fotos.push({
+        window.itemMediaData[activeItemIdx].fotos.push({
             file_data: dataUrl,
             description: ""
         });
 
-        // LLAMAR A LA NUEVA FUNCIÓN DE RENDERIZADO
+        // Refrescar miniaturas específicamente para este ítem
         renderThumbnails(activeItemIdx);
     }
 }
@@ -1051,38 +1054,36 @@ function limpiarFormulario() {
 }
 
 function renderThumbnails(idx) {
-    // Buscamos la tarjeta específica usando el atributo data-index que pusimos en el HTML
+    // Localizamos la tarjeta específica por su atributo data-index
     const box = document.querySelector(`.dynamic-item-box[data-index="${idx}"]`);
-    if (!box) {
-        console.error("No se encontró la tarjeta para el índice:", idx);
-        return;
-    }
+    if (!box) return;
 
-    // Localizamos los contenedores de miniaturas DENTRO de esa tarjeta
     const photoContainer = box.querySelector('.item-photo-thumbnails');
-    const videoContainer = box.querySelector('.item-video-thumbnails');
-    
-    if (!photoContainer) return; // Aquí es donde fallaba el appendChild anteriormente
+    if (!photoContainer) return; // Evita el error de 'appendChild' sobre null
 
-    // Limpiar y dibujar fotos
-    photoContainer.innerHTML = '';
-    itemMediaData[idx].fotos.forEach((foto, i) => {
-        const img = document.createElement('img');
-        img.src = foto.file_data;
-        img.style = "width: 70px; height: 70px; object-fit: cover; margin: 5px; border-radius: 5px; border: 1px solid #ddd;";
-        photoContainer.appendChild(img);
+    photoContainer.innerHTML = ''; // Limpiamos para redibujar
+
+    const fotos = window.itemMediaData[idx].fotos;
+    fotos.forEach((foto, i) => {
+        const thumbWrapper = document.createElement('div');
+        thumbWrapper.className = 'photo-thumbnail-wrapper';
+        
+        // Mantuvimos tu estructura de descripción y botones de voz
+        const descriptionInputId = `photo_desc_item_${idx}_${i}`;
+
+        thumbWrapper.innerHTML = `
+            <img src="${foto.file_data}" class="thumbnail-image" style="width: 100px; border-radius: 8px;">
+            <div class="thumbnail-description-box">
+                <input type="text" id="${descriptionInputId}" class="thumbnail-input" 
+                       placeholder="Descripción..." value="${foto.description}"
+                       onchange="window.itemMediaData[${idx}].fotos[${i}].description = this.value">
+            </div>
+            <div class="photo-controls">
+                <button class="photo-button" onclick="deletePhotoFromItem(${idx}, ${i})">❌</button>
+            </div>`;
+        
+        photoContainer.appendChild(thumbWrapper);
     });
-
-    // Limpiar y dibujar videos
-    if (videoContainer) {
-        videoContainer.innerHTML = '';
-        itemMediaData[idx].videos.forEach((video, i) => {
-            const vidIcon = document.createElement('div');
-            vidIcon.innerHTML = `<i class="fas fa-video"></i> Vid ${i+1}`;
-            vidIcon.style = "width: 70px; height: 70px; background: #333; color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 5px; margin: 5px; font-size: 10px;";
-            videoContainer.appendChild(vidIcon);
-        });
-    }
 }
 
 function handleLocalFiles(event, idx, type) {
