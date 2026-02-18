@@ -149,6 +149,34 @@ function startVideoRecording() {
 
 function stopVideoRecording() {
     if (videoMediaRecorder && videoMediaRecorder.state === 'recording') {
+        
+        // Definimos qué hacer cuando la grabación se detenga efectivamente
+        videoMediaRecorder.onstop = () => {
+            const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+            const reader = new FileReader();
+            reader.readAsDataURL(videoBlob);
+
+            reader.onloadend = () => {
+                const base64Video = reader.result;
+
+                // Usamos el índice del ítem que abrió la cámara
+                if (window.activeItemIdx !== null) {
+                    if (!window.itemMediaData[window.activeItemIdx]) {
+                        window.itemMediaData[window.activeItemIdx] = { fotos: [], videos: [] };
+                    }
+
+                    // Guardamos el video en el objeto global
+                    window.itemMediaData[window.activeItemIdx].videos.push({
+                        file_data: base64Video,
+                        description: ""
+                    });
+
+                    // Dibujamos la miniatura en la tarjeta correcta
+                    renderThumbnails(window.activeItemIdx);
+                }
+            };
+        };
+
         videoMediaRecorder.stop();
     }
     updateRecordingUI(false);
