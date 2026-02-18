@@ -898,6 +898,56 @@ async function saveRecordForm() {
     }
 }
 
+function setupVoiceButtons() {
+    // Seleccionamos todos los botones de grabación
+    const recordButtons = document.querySelectorAll('.record-btn');
+    
+    recordButtons.forEach(button => {
+        // Limpiamos eventos previos para evitar duplicados
+        button.onclick = null; 
+
+        button.onclick = function() {
+            const targetId = this.getAttribute('data-target-input');
+            const targetInput = document.getElementById(targetId);
+            
+            if (targetInput) {
+                startVoiceRecognition(targetInput, this);
+            }
+        };
+    });
+}
+
+// Función auxiliar para el reconocimiento de voz
+function startVoiceRecognition(inputField, button) {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'es-ES';
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Icono de cargando
+        button.style.color = "red";
+    };
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        // Agregamos el texto al input sin borrar lo que ya estaba
+        inputField.value += (inputField.value ? ' ' : '') + transcript;
+    };
+
+    recognition.onend = () => {
+        button.innerHTML = '<i class="fas fa-microphone"></i>';
+        button.style.color = "";
+    };
+
+    recognition.onerror = (event) => {
+        console.error("Error de reconocimiento:", event.error);
+        button.innerHTML = '<i class="fas fa-microphone"></i>';
+        button.style.color = "";
+    };
+
+    recognition.start();
+}
+
 function mostrarMensajeExito(result) {
     const div = document.getElementById('successMessage');
     
