@@ -42,8 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('stop-record-btn').addEventListener('click', stopVideoRecording);
 
     // Listeners para adjuntar archivos
+    /*
     document.getElementById('file-input').addEventListener('change', handleFileUpload);
     document.getElementById('video-file-input').addEventListener('change', handleVideoUpload);
+    */
 
     // Listeners para grabación de audio por campo
     document.querySelectorAll('.record-btn').forEach(button => {
