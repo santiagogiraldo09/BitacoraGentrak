@@ -150,31 +150,31 @@ function startVideoRecording() {
 function stopVideoRecording() {
     if (videoMediaRecorder && videoMediaRecorder.state === 'recording') {
         
-        // Definimos qué hacer cuando la grabación se detenga efectivamente
         videoMediaRecorder.onstop = () => {
+            // Usamos recordedChunks (asegúrate que en startVideoRecording también se llame así)
             const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
             const reader = new FileReader();
-            reader.readAsDataURL(videoBlob);
-
+            
             reader.onloadend = () => {
                 const base64Video = reader.result;
 
-                // Usamos el índice del ítem que abrió la cámara
                 if (window.activeItemIdx !== null) {
+                    // Inicializar el objeto si no existe
                     if (!window.itemMediaData[window.activeItemIdx]) {
                         window.itemMediaData[window.activeItemIdx] = { fotos: [], videos: [] };
                     }
 
-                    // Guardamos el video en el objeto global
+                    // Guardar en el ítem activo
                     window.itemMediaData[window.activeItemIdx].videos.push({
                         file_data: base64Video,
                         description: ""
                     });
 
-                    // Dibujamos la miniatura en la tarjeta correcta
+                    // FORZAR EL RENDERIZADO
                     renderThumbnails(window.activeItemIdx);
                 }
             };
+            reader.readAsDataURL(videoBlob);
         };
 
         videoMediaRecorder.stop();
