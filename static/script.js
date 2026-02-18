@@ -23,7 +23,6 @@ let contadorAmbiental = 0;
 let contadorCalidad = 0;
 
 let currenRecognition = null;
-let activeItemIdx = null;
 
 // =================================================================
 //          INICIALIZACIÓN DE EVENTOS
@@ -901,28 +900,6 @@ async function saveRecordForm() {
     }
 }
 
-function iniciarCamaraDesdeItem() {
-    const cameraContainer = document.getElementById('camera-container');
-    const actionButtons = document.querySelector('.action-buttons-wrapper');
-
-    if (cameraContainer) {
-        // Mostramos el visor de la cámara
-        cameraContainer.style.display = 'block';
-        
-        // Mostramos los botones de captura (Tomar foto, Grabar, Stop)
-        if (actionButtons) {
-            actionButtons.style.display = 'block';
-        }
-        
-        // Iniciamos el stream de video (asegúrate de que esta función exista en tu script.js)
-        if (typeof startCamera === 'function') {
-            startCamera();
-        }
-    } else {
-        console.error("No se encontró el contenedor 'camera-container' en el HTML.");
-    }
-}
-
 function setupVoiceButtons() {
     // Seleccionamos tanto las cajas dinámicas como los grupos de formulario estáticos
     const boxes = document.querySelectorAll('.dynamic-item-box, .form-group');
@@ -1088,9 +1065,8 @@ function renderThumbnails(idx) {
 
 function handleLocalFiles(event, idx, type) {
     const files = event.target.files;
-    if (!files || files.length === 0) return;
+    if (!files.length) return;
 
-    // Inicializar el espacio para este ítem si no existe
     if (!itemMediaData[idx]) {
         itemMediaData[idx] = { fotos: [], videos: [] };
     }
@@ -1098,15 +1074,15 @@ function handleLocalFiles(event, idx, type) {
     Array.from(files).forEach(file => {
         const reader = new FileReader();
         reader.onload = (e) => {
-            const base64Data = e.target.result;
+            const fileData = e.target.result;
             
             if (type === 'foto') {
-                itemMediaData[idx].fotos.push({ file_data: base64Data, description: file.name });
+                itemMediaData[idx].fotos.push({ file_data: fileData, description: "" });
             } else {
-                itemMediaData[idx].videos.push({ file_data: base64Data, description: file.name });
+                itemMediaData[idx].videos.push({ file_data: fileData, description: "" });
             }
             
-            // Renderizamos las miniaturas inmediatamente para que el usuario vea el cambio
+            // Refrescar la vista de miniaturas en la tarjeta
             renderThumbnails(idx);
         };
         reader.readAsDataURL(file);
