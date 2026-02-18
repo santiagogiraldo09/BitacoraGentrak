@@ -24,6 +24,7 @@ let contadorCalidad = 0;
 
 let currenRecognition = null;
 var itemMediaData = {};
+var recordedChunks = [];
 
 
 // =================================================================
