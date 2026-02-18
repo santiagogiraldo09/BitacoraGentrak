@@ -1050,32 +1050,38 @@ function limpiarFormulario() {
 }
 
 function renderThumbnails(idx) {
+    // Buscamos la tarjeta específica usando el atributo data-index que pusimos en el HTML
     const box = document.querySelector(`.dynamic-item-box[data-index="${idx}"]`);
-    if (!box) return;
+    if (!box) {
+        console.error("No se encontró la tarjeta para el índice:", idx);
+        return;
+    }
 
+    // Localizamos los contenedores de miniaturas DENTRO de esa tarjeta
     const photoContainer = box.querySelector('.item-photo-thumbnails');
     const videoContainer = box.querySelector('.item-video-thumbnails');
     
+    if (!photoContainer) return; // Aquí es donde fallaba el appendChild anteriormente
+
+    // Limpiar y dibujar fotos
     photoContainer.innerHTML = '';
-    videoContainer.innerHTML = '';
-
-    // Renderizar Fotos
     itemMediaData[idx].fotos.forEach((foto, i) => {
-        const div = document.createElement('div');
-        div.innerHTML = `<img src="${foto.file_data}" style="width:70px; height:70px; object-fit:cover; margin:5px; border-radius:5px;">`;
-        photoContainer.appendChild(div);
+        const img = document.createElement('img');
+        img.src = foto.file_data;
+        img.style = "width: 70px; height: 70px; object-fit: cover; margin: 5px; border-radius: 5px; border: 1px solid #ddd;";
+        photoContainer.appendChild(img);
     });
 
-    // Renderizar Videos (Miniatura con icono)
-    itemMediaData[idx].videos.forEach((video, i) => {
-        const div = document.createElement('div');
-        div.innerHTML = `
-            <div style="width:70px; height:70px; background:#000; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:5px; margin:5px; position:relative;">
-                <i class="fas fa-video"></i>
-                <small style="position:absolute; bottom:2px; font-size:8px;">Video ${i+1}</small>
-            </div>`;
-        videoContainer.appendChild(div);
-    });
+    // Limpiar y dibujar videos
+    if (videoContainer) {
+        videoContainer.innerHTML = '';
+        itemMediaData[idx].videos.forEach((video, i) => {
+            const vidIcon = document.createElement('div');
+            vidIcon.innerHTML = `<i class="fas fa-video"></i> Vid ${i+1}`;
+            vidIcon.style = "width: 70px; height: 70px; background: #333; color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 5px; margin: 5px; font-size: 10px;";
+            videoContainer.appendChild(vidIcon);
+        });
+    }
 }
 
 function handleLocalFiles(event, idx, type) {
