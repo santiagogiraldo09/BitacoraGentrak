@@ -23,6 +23,8 @@ let contadorAmbiental = 0;
 let contadorCalidad = 0;
 
 let currenRecognition = null;
+let itemMediaData = {}; 
+let activeItemIdx = null;
 
 // =================================================================
 //          INICIALIZACIÓN DE EVENTOS
