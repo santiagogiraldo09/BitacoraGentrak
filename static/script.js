@@ -23,8 +23,13 @@ let contadorAmbiental = 0;
 let contadorCalidad = 0;
 
 let currenRecognition = null;
-let itemMediaData = {}; 
-let activeItemIdx = null;
+// Declarar solo si no han sido declaradas antes
+if (typeof itemMediaData === 'undefined') {
+    var itemMediaData = {};
+}
+if (typeof activeItemIdx === 'undefined') {
+    var activeItemIdx = null;
+}
 
 // =================================================================
 //          INICIALIZACIÓN DE EVENTOS
