@@ -88,23 +88,6 @@
                     <i class="fas fa-plus"></i> Añadir Nuevo Ítem
                 </button>
             </div>
-            
-            <div class="centrar">
-                <button id="activate-camera-btn" class="activate-camera-button">
-                    <i class="fas fa-camera"></i> Activar Cámara para Evidencia
-                </button>
-            </div>
-
-            <div class="attachment-controls">
-                <label>Adjuntar Evidencia desde el dispositivo:</label>
-                <div class="button-row">
-                    <button id="attach-clip" class="clip-button" onclick="document.getElementById('file-input').click()" title="Adjuntar imagen">📎</button>
-                    <input type="file" id="file-input" class="file-input" accept="image/*" multiple style="display:none;">
-                    
-                    <button id="attach-video-clip" class="clip-button" onclick="document.getElementById('video-file-input').click()" title="Adjuntar video">🎥</button>
-                    <input type="file" id="video-file-input" class="file-input" accept="video/*" style="display:none;">
-                </div>
-            </div>
 
             <div id="camera-container" style="display: none;">
                 <video id="videoElement" autoplay playsinline muted></video>
@@ -124,12 +107,7 @@
                     </button>
                 </div>
             </div>
-            
-            <div id="gallery-container">
-                <div id="photoThumbnails" class="photo-thumbnails"></div>
-                <div id="videoThumbnails" class="photo-thumbnails"></div>
-            </div>
-            
+
             <div class="centrar">
                 <button id="save-record" onclick="saveRecord()">Guardar registro</button>
             </div>
@@ -187,8 +165,6 @@
                         <option value="No">No</option>
                         <option value="N/A">N/A</option>
                     </select>
-                    <button class="record-btn" title="Grabar respuesta"><i class="fas fa-microphone"></i></button>
-                    <button class="stop-btn" title="Detener grabación" style="display: none;"><i class="fas fa-stop"></i></button>
                 </div>
             </div>
 
@@ -209,6 +185,30 @@
                     <button class="stop-btn" title="Detener grabación" style="display: none;"><i class="fas fa-stop"></i></button>
                 </div>
             </div>
+
+            <div class="multimedia-item-section" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                <div class="centrar" style="margin-bottom: 10px;">
+                    <button class="activate-camera-button btn-item-camera" style="width: auto; padding: 10px 20px;">
+                        <i class="fas fa-camera"></i> Activar Cámara
+                    </button>
+                </div>
+
+                <div class="attachment-controls">
+                    <label>Adjuntar Evidencia:</label>
+                    <div class="button-row">
+                        <button class="clip-button btn-item-photo-attach" title="Adjuntar imagen">📎</button>
+                        <input type="file" class="item-file-input" accept="image/*" multiple style="display:none;">
+                        
+                        <button class="clip-button btn-item-video-attach" title="Adjuntar video">🎥</button>
+                        <input type="file" class="item-video-input" accept="video/*" style="display:none;">
+                    </div>
+                </div>
+
+                <div class="item-gallery-container">
+                    <div class="item-photo-thumbnails photo-thumbnails"></div>
+                    <div class="item-video-thumbnails photo-thumbnails"></div>
+                </div>
+            </div>
         </div>
     </template>
 
@@ -216,6 +216,7 @@
 
     <script>
         let itemCount = 0;
+        let activeItemIdx = null; // Para saber qué ítem está usando la cámara
 
         function addItem() {
             itemCount++;
@@ -224,22 +225,36 @@
             const clone = template.content.cloneNode(true);
             const box = clone.querySelector('.dynamic-item-box');
             
-            // Actualizar título
+            const currentIdx = itemCount - 1;
+            box.setAttribute('data-index', currentIdx);
             box.querySelector('.item-title').innerText = `Ítem #${itemCount}`;
             
             // Configurar IDs únicos para funciones de voz
-            const inputs = box.querySelectorAll('input');
-            const buttons = box.querySelectorAll('button');
-            
+            const inputs = box.querySelectorAll('input[type="text"]');
             inputs.forEach((input, index) => {
                 const uniqueId = `item_${itemCount}_input_${index}`;
                 input.id = uniqueId;
-                // Vincular botones de esa fila al input correspondiente
                 const recordBtn = input.nextElementSibling;
                 const stopBtn = recordBtn.nextElementSibling;
-                recordBtn.setAttribute('data-target-input', uniqueId);
-                stopBtn.setAttribute('data-target-input', uniqueId);
+                if(recordBtn) recordBtn.setAttribute('data-target-input', uniqueId);
+                if(stopBtn) stopBtn.setAttribute('data-target-input', uniqueId);
             });
+
+            // Lógica de botones multimedia por ítem
+            const itemCameraBtn = box.querySelector('.btn-item-camera');
+            const itemPhotoAttach = box.querySelector('.btn-item-photo-attach');
+            const itemVideoAttach = box.querySelector('.btn-item-video-attach');
+            const itemFileInput = box.querySelector('.item-file-input');
+            const itemVideoInput = box.querySelector('.item-video-input');
+
+            itemCameraBtn.onclick = function() {
+                activeItemIdx = currentIdx;
+                // Llama a la función global de activar cámara
+                document.getElementById('activate-camera-btn').click(); 
+            };
+
+            itemPhotoAttach.onclick = () => itemFileInput.click();
+            itemVideoAttach.onclick = () => itemVideoInput.click();
 
             // Mostrar botón eliminar si no es el primer ítem
             if (itemCount > 1) {
@@ -253,7 +268,6 @@
 
             container.appendChild(clone);
             
-            // Re-vincular eventos de voz a los nuevos botones
             if (typeof setupVoiceButtons === "function") {
                 setupVoiceButtons();
             }
@@ -264,14 +278,13 @@
             itemCount = 0;
             boxes.forEach((box) => {
                 itemCount++;
+                box.setAttribute('data-index', itemCount - 1);
                 box.querySelector('.item-title').innerText = `Ítem #${itemCount}`;
             });
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Generar el primer ítem por defecto
             addItem();
-
             document.getElementById('add-item-btn').addEventListener('click', addItem);
 
             const urlParams = new URLSearchParams(window.location.search);

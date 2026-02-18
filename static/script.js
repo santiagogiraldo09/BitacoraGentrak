@@ -1153,6 +1153,7 @@ function saveRecord() {
     const tarjetas = document.querySelectorAll('.dynamic-item-box');
 
     tarjetas.forEach((tarjeta, index) => {
+        const fotosDeEsteItem = [];
         itemsReporte.push({
             item_numero: index + 1,
             edificacion_zona: zonaGlobal, // Se asigna el valor global a cada fila
@@ -1161,7 +1162,8 @@ function saveRecord() {
             condicion_observada: tarjeta.querySelector('.field-condicion').value,
             cumple: tarjeta.querySelector('.field-cumple').value,
             observaciones: tarjeta.querySelector('.field-observaciones').value,
-            acciones_correctivas: tarjeta.querySelector('.field-acciones').value
+            acciones_correctivas: tarjeta.querySelector('.field-acciones').value,
+            fotos: fotosDeEsteItem
         });
     });
 

@@ -1098,19 +1098,16 @@ def guardar_registro():
     try:
         data = request.get_json()
         project_id = data.get('project_id')
-        items = data.get('items', [])  # Nueva lista de ítems dinámicos
-        fotos = data.get('fotos', [])
-        videos = data.get('videos', [])
-
+        items = data.get('items', [])
+        # Nota: 'fotos' y 'videos' ahora deberían venir dentro de cada objeto en 'items'
+        
         if not project_id or not items:
-            return jsonify({"error": "Faltan datos requeridos (Proyecto o Ítems)."}), 400
+            return jsonify({"error": "Faltan datos requeridos."}), 400
 
         conn = psycopg2.connect(**POSTGRES_CONFIG)
         cursor = conn.cursor()
 
-        primer_id_reporte = None
-
-        # 1. Guardar cada ítem en la tabla reporte_fiscalizacion
+        # 1. Bucle principal para guardar cada ítem
         for item in items:
             cursor.execute("""
                 INSERT INTO reporte_fiscalizacion (
@@ -1120,36 +1117,34 @@ def guardar_registro():
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id_reporte
             """, (
-                project_id,
-                item.get('edificacion_zona'),
-                item.get('item_numero'),
-                item.get('area_inspeccionada'),
-                item.get('especificacion_tecnica'),
-                item.get('condicion_observada'),
-                item.get('cumple'),
-                item.get('observaciones'),
-                item.get('acciones_correctivas')
+                project_id, item.get('edificacion_zona'), item.get('item_numero'),
+                item.get('area_inspeccionada'), item.get('especificacion_tecnica'),
+                item.get('condicion_observada'), item.get('cumple'),
+                item.get('observaciones'), item.get('acciones_correctivas')
             ))
-            res = cursor.fetchone()
-            if primer_id_reporte is None:
-                primer_id_reporte = res[0]
+            
+            # Capturamos el ID específico de ESTE ítem recién insertado
+            id_item_actual = cursor.fetchone()[0]
 
-        # 2. Guardar Fotos (vinculadas al primer item del reporte para no perder la funcionalidad)
-        for foto_obj in fotos:
-            cursor.execute(
-                "INSERT INTO fotos_registro (id_registro, imagen_base64, description) VALUES (%s, %s, %s)",
-                (primer_id_reporte, foto_obj.get('file_data'), foto_obj.get('description'))
-            )
+            # 2. GUARDAR FOTOS ESPECÍFICAS DE ESTE ÍTEM (NUEVA UBICACIÓN)
+            # El frontend ahora debe enviar las fotos dentro de cada item
+            fotos_item = item.get('fotos', []) 
+            for foto_obj in fotos_item:
+                cursor.execute("""
+                    INSERT INTO fotos_registro (id_registro, imagen_base64, description) 
+                    VALUES (%s, %s, %s)
+                """, (id_item_actual, foto_obj.get('file_data'), foto_obj.get('description')))
 
-        # 3. Guardar Videos
-        for video_obj in videos:
-            cursor.execute(
-                "INSERT INTO videos_registro (id_registro, video_base64, description) VALUES (%s, %s, %s)",
-                (primer_id_reporte, video_obj.get('file_data'), video_obj.get('description'))
-            )
+            # 3. GUARDAR VIDEOS ESPECÍFICOS DE ESTE ÍTEM
+            videos_item = item.get('videos', [])
+            for video_obj in videos_item:
+                cursor.execute("""
+                    INSERT INTO videos_registro (id_registro, video_base64, description) 
+                    VALUES (%s, %s, %s)
+                """, (id_item_actual, video_obj.get('file_data'), video_obj.get('description')))
 
         conn.commit()
-        return jsonify({"mensaje": "¡Inspección multimedia guardada exitosamente!"}), 200
+        return jsonify({"mensaje": "¡Reporte guardado con imágenes por ítem!"}), 200
 
     except Exception as e:
         if conn: conn.rollback()
