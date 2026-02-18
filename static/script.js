@@ -82,17 +82,32 @@ async function startCamera() {
 }
 
 function takePhoto() {
-    if (!currentStream) { return; }
     const canvas = document.getElementById('photoCanvas');
-    const videoElement = document.getElementById('videoElement');
+    const video = document.getElementById('videoElement');
+    const context = canvas.getContext('2d');
+
+    if (!video || !canvas) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const dataUrl = canvas.toDataURL('image/png');
     
-    canvas.width = videoElement.videoWidth;
-    canvas.height = videoElement.videoHeight;
-    canvas.getContext('2d').drawImage(videoElement, 0, 0);
-    
-    const photoBase64 = canvas.toDataURL('image/jpeg', 0.8);
-    capturedPhotos.push(photoBase64);
-    addPhotoThumbnail(photoBase64, capturedPhotos.length - 1);
+    // Guardar la foto en nuestro objeto de datos por ítem
+    if (activeItemIdx !== null) {
+        if (!itemMediaData[activeItemIdx]) {
+            itemMediaData[activeItemIdx] = { fotos: [], videos: [] };
+        }
+        
+        itemMediaData[activeItemIdx].fotos.push({
+            file_data: dataUrl,
+            description: ""
+        });
+
+        // LLAMAR A LA NUEVA FUNCIÓN DE RENDERIZADO
+        renderThumbnails(activeItemIdx);
+    }
 }
 
 function startVideoRecording() {
