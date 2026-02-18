@@ -1072,35 +1072,62 @@ function limpiarFormulario() {
 }
 
 function renderThumbnails(idx) {
-    // Localizamos la tarjeta específica por su atributo data-index
+    // 1. Localizamos la tarjeta específica
     const box = document.querySelector(`.dynamic-item-box[data-index="${idx}"]`);
     if (!box) return;
 
+    // 2. Localizamos ambos contenedores
     const photoContainer = box.querySelector('.item-photo-thumbnails');
-    if (!photoContainer) return; // Evita el error de 'appendChild' sobre null
+    const videoContainer = box.querySelector('.item-video-thumbnails');
+    
+    // Limpiamos los contenedores antes de redibujar
+    if (photoContainer) photoContainer.innerHTML = '';
+    if (videoContainer) videoContainer.innerHTML = '';
 
-    photoContainer.innerHTML = ''; // Limpiamos para redibujar
+    // Validamos que existan datos para este ítem
+    if (!window.itemMediaData[idx]) return;
 
-    const fotos = window.itemMediaData[idx].fotos;
+    // --- SECCIÓN DE FOTOS ---
+    const fotos = window.itemMediaData[idx].fotos || [];
     fotos.forEach((foto, i) => {
         const thumbWrapper = document.createElement('div');
         thumbWrapper.className = 'photo-thumbnail-wrapper';
-        
-        // Mantuvimos tu estructura de descripción y botones de voz
         const descriptionInputId = `photo_desc_item_${idx}_${i}`;
 
         thumbWrapper.innerHTML = `
             <img src="${foto.file_data}" class="thumbnail-image" style="width: 100px; border-radius: 8px;">
             <div class="thumbnail-description-box">
                 <input type="text" id="${descriptionInputId}" class="thumbnail-input" 
-                       placeholder="Descripción..." value="${foto.description}"
+                       placeholder="Descripción..." value="${foto.description || ''}"
                        onchange="window.itemMediaData[${idx}].fotos[${i}].description = this.value">
             </div>
             <div class="photo-controls">
-                <button class="photo-button" onclick="deletePhotoFromItem(${idx}, ${i})">❌</button>
+                <button type="button" class="photo-button" onclick="deletePhotoFromItem(${idx}, ${i})">❌</button>
+            </div>`;
+        photoContainer.appendChild(thumbWrapper);
+    });
+
+    // --- SECCIÓN DE VIDEOS (NUEVA) ---
+    const videos = window.itemMediaData[idx].videos || [];
+    videos.forEach((video, i) => {
+        const thumbWrapper = document.createElement('div');
+        thumbWrapper.className = 'video-thumbnail-wrapper'; // Puedes crear este estilo en CSS
+        const videoDescId = `video_desc_item_${idx}_${i}`;
+
+        thumbWrapper.innerHTML = `
+            <div class="video-preview-placeholder" style="width: 100px; height: 75px; background: #333; color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                <i class="fas fa-video fa-2x"></i>
+            </div>
+            <div class="thumbnail-description-box">
+                <input type="text" id="${videoDescId}" class="thumbnail-input" 
+                       placeholder="Descripción video..." value="${video.description || ''}"
+                       onchange="window.itemMediaData[${idx}].videos[${i}].description = this.value">
+            </div>
+            <div class="photo-controls">
+                <button type="button" class="photo-button" onclick="deleteVideoFromItem(${idx}, ${i})">❌</button>
             </div>`;
         
-        photoContainer.appendChild(thumbWrapper);
+        if (videoContainer) videoContainer.appendChild(thumbWrapper);
     });
 }
 

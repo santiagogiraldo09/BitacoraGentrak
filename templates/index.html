@@ -250,13 +250,16 @@
             const itemFileInput = box.querySelector('.item-file-input');
             const itemVideoInput = box.querySelector('.item-video-input');
 
+            // --- LAS LÍNEAS QUE DEBES ASEGURAR QUE ESTÉN AQUÍ ---
+            itemFileInput.onchange = (e) => handleLocalFiles(e, currentIdx, 'foto');
+            itemVideoInput.onchange = (e) => handleLocalFiles(e, currentIdx, 'video');
+            // --------------------------------------------------
+
             itemCameraBtn.onclick = function() {
                 activeItemIdx = currentIdx;
-                // Mostrar el contenedor de la cámara
                 document.getElementById('camera-container').style.display = 'block';
                 document.querySelector('.action-buttons-wrapper').style.display = 'block';
                 
-                // Llamar directamente a la función que inicia el stream
                 if (typeof startCamera === 'function') {
                     startCamera();
                 } else {
@@ -267,7 +270,6 @@
             itemPhotoAttach.onclick = () => itemFileInput.click();
             itemVideoAttach.onclick = () => itemVideoInput.click();
 
-            // Mostrar botón eliminar si no es el primer ítem
             if (itemCount > 1) {
                 const removeBtn = box.querySelector('.remove-item-btn');
                 removeBtn.style.display = 'block';
