@@ -1034,6 +1034,61 @@ function limpiarFormulario() {
     console.log('🧹 Formulario limpiado');
 }
 
+function renderThumbnails(idx) {
+    const box = document.querySelector(`.dynamic-item-box[data-index="${idx}"]`);
+    if (!box) return;
+
+    const photoContainer = box.querySelector('.item-photo-thumbnails');
+    const videoContainer = box.querySelector('.item-video-thumbnails');
+    
+    photoContainer.innerHTML = '';
+    videoContainer.innerHTML = '';
+
+    // Renderizar Fotos
+    itemMediaData[idx].fotos.forEach((foto, i) => {
+        const div = document.createElement('div');
+        div.innerHTML = `<img src="${foto.file_data}" style="width:70px; height:70px; object-fit:cover; margin:5px; border-radius:5px;">`;
+        photoContainer.appendChild(div);
+    });
+
+    // Renderizar Videos (Miniatura con icono)
+    itemMediaData[idx].videos.forEach((video, i) => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <div style="width:70px; height:70px; background:#000; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:5px; margin:5px; position:relative;">
+                <i class="fas fa-video"></i>
+                <small style="position:absolute; bottom:2px; font-size:8px;">Video ${i+1}</small>
+            </div>`;
+        videoContainer.appendChild(div);
+    });
+}
+
+function handleLocalFiles(event, idx, type) {
+    const files = event.target.files;
+    if (!files.length) return;
+
+    if (!itemMediaData[idx]) {
+        itemMediaData[idx] = { fotos: [], videos: [] };
+    }
+
+    Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const fileData = e.target.result;
+            
+            if (type === 'foto') {
+                itemMediaData[idx].fotos.push({ file_data: fileData, description: "" });
+            } else {
+                itemMediaData[idx].videos.push({ file_data: fileData, description: "" });
+            }
+            
+            // Refrescar la vista de miniaturas en la tarjeta
+            renderThumbnails(idx);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 
 // =================================================================
 //          FUNCIONES PARA ADJUNTAR ARCHIVOS

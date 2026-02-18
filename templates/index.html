@@ -252,8 +252,16 @@
 
             itemCameraBtn.onclick = function() {
                 activeItemIdx = currentIdx;
-                // Llama a la función global de activar cámara
-                document.getElementById('activate-camera-btn').click(); 
+                // Mostrar el contenedor de la cámara
+                document.getElementById('camera-container').style.display = 'block';
+                document.querySelector('.action-buttons-wrapper').style.display = 'block';
+                
+                // Llamar directamente a la función que inicia el stream
+                if (typeof startCamera === 'function') {
+                    startCamera();
+                } else {
+                    console.error("La función startCamera no está definida en script.js");
+                }
             };
 
             itemPhotoAttach.onclick = () => itemFileInput.click();
