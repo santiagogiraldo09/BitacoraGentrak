@@ -1226,25 +1226,43 @@ function handleVideoUpload(event) {
 // =================================================================
 function startFieldRecording(recordButton) {
     if (isFieldRecording) return;
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-        isFieldRecording = true;
-        audioFieldChunks = [];
-        const targetInputId = recordButton.dataset.targetInput;
-        currentTargetInput = document.getElementById(targetInputId);
-        const stopButton = document.querySelector(`.stop-btn[data-target-input='${targetInputId}']`);
-        recordButton.style.display = 'none';
-        stopButton.style.display = 'flex';
-        currentTargetInput.classList.add('recording-active');
-        currentTargetInput.placeholder = "Escuchando...";
-        audioMediaRecorder = new MediaRecorder(stream);
-        audioMediaRecorder.start();
-        audioMediaRecorder.ondataavailable = event => audioFieldChunks.push(event.data);
-        audioMediaRecorder.onstop = () => {
-            stream.getTracks().forEach(track => track.stop());
-            const audioBlob = new Blob(audioFieldChunks, { type: 'audio/webm' });
-            transcribeAudio(audioBlob);
-        };
-    }).catch(() => alert("No se pudo acceder al micrófono."));
+
+    // Pedimos permiso primero
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            // TODO lo visual ocurre SOLO después de tener éxito con el stream
+            isFieldRecording = true;
+            audioFieldChunks = [];
+            
+            const targetInputId = recordButton.dataset.targetInput;
+            currentTargetInput = document.getElementById(targetInputId);
+            const stopButton = document.querySelector(`.stop-btn[data-target-input='${targetInputId}']`);
+            
+            if (recordButton && stopButton && currentTargetInput) {
+                recordButton.style.display = 'none';
+                stopButton.style.display = 'flex';
+                currentTargetInput.classList.add('recording-active');
+                currentTargetInput.placeholder = "Escuchando...";
+            }
+
+            audioMediaRecorder = new MediaRecorder(stream);
+            audioMediaRecorder.start();
+
+            audioMediaRecorder.ondataavailable = event => audioFieldChunks.push(event.data);
+            
+            audioMediaRecorder.onstop = () => {
+                stream.getTracks().forEach(track => track.stop());
+                const audioBlob = new Blob(audioFieldChunks, { type: 'audio/webm' });
+                transcribeAudio(audioBlob);
+            };
+        })
+        .catch(err => {
+            // Solo mostramos alerta si realmente hay un error de denegación o hardware
+            console.error("Error real de micrófono:", err);
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                alert("Permiso denegado. Por favor, habilita el micrófono en la configuración del navegador.");
+            }
+        });
 }
 
 function stopFieldRecording() {

@@ -919,7 +919,7 @@ def historialregistro():
     
     if not project_id:
         flash("No se proporcionó el ID del proyecto", "error")
-        return redirect(url_for('registros')) # Ajustado a tu ruta de lista de proyectos
+        return redirect(url_for('registros'))
 
     registros = []
     conn = None
@@ -927,7 +927,8 @@ def historialregistro():
         conn = psycopg2.connect(**POSTGRES_CONFIG)
         cursor = conn.cursor()
 
-        # 1. Obtener los registros de la NUEVA TABLA reporte_fiscalizacion
+        # 1. Obtener los registros de la tabla reporte_fiscalizacion
+        # Nota: He añadido id_reporte al inicio para poder vincular las fotos
         cursor.execute("""
             SELECT id_reporte, edificacion_zona, item_numero, area_inspeccionada, 
                    especificacion_tecnica, condicion_observada, cumple, 
@@ -939,19 +940,24 @@ def historialregistro():
         
         registros_principales = cursor.fetchall()
 
-        # 2. Para cada registro, obtener sus fotos y videos
+        # 2. Para cada registro, obtener sus fotos de la NUEVA TABLA fotos_inspeccion_items
         for row in registros_principales:
             id_reporte = row[0]
             
-            # Buscamos fotos (id_registro en tu tabla de fotos ahora contiene el id_reporte)
-            cursor.execute("SELECT imagen_base64, description FROM fotos_registro WHERE id_registro = %s", (id_reporte,))
-            fotos = [{'file_data': item[0], 'description': item[1]} for item in cursor.fetchall()]
+            # Buscamos fotos en la nueva tabla vinculada a cada ítem (id_registro = id_reporte)
+            cursor.execute("""
+                SELECT imagen_base64 
+                FROM fotos_inspeccion_items 
+                WHERE id_registro = %s
+            """, (id_reporte,))
             
-            # Buscamos videos
-            cursor.execute("SELECT video_base64, description FROM videos_registro WHERE id_registro = %s", (id_reporte,))
-            videos = [{'file_data': item[0], 'description': item[1]} for item in cursor.fetchall()]
+            # Mapeamos las fotos para el historial
+            fotos = [{'file_data': item[0]} for item in cursor.fetchall()]
+            
+            # Si en el futuro activas videos por ítem, aquí harías la consulta similar a videos_inspeccion_items
+            videos = [] 
 
-            # Mapeamos los datos con los nombres de la nueva tabla
+            # Mapeamos los datos para enviarlos al template historialRegistro.html
             registros.append({
                 'id': id_reporte,
                 'edificacion_zona': row[1],
@@ -1099,7 +1105,6 @@ def guardar_registro():
         data = request.get_json()
         project_id = data.get('project_id')
         items = data.get('items', [])
-        # Nota: 'fotos' y 'videos' ahora deberían venir dentro de cada objeto en 'items'
         
         if not project_id or not items:
             return jsonify({"error": "Faltan datos requeridos."}), 400
@@ -1107,14 +1112,14 @@ def guardar_registro():
         conn = psycopg2.connect(**POSTGRES_CONFIG)
         cursor = conn.cursor()
 
-        # 1. Bucle principal para guardar cada ítem
         for item in items:
+            # 1. Insertar el ítem principal
             cursor.execute("""
                 INSERT INTO reporte_fiscalizacion (
                     id_proyecto, edificacion_zona, item_numero, area_inspeccionada, 
                     especificacion_tecnica, condicion_observada, cumple, 
-                    observaciones, acciones_correctivas
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    observaciones, acciones_correctivas, fecha_creacion
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                 RETURNING id_reporte
             """, (
                 project_id, item.get('edificacion_zona'), item.get('item_numero'),
@@ -1123,32 +1128,26 @@ def guardar_registro():
                 item.get('observaciones'), item.get('acciones_correctivas')
             ))
             
-            # Capturamos el ID específico de ESTE ítem recién insertado
             id_item_actual = cursor.fetchone()[0]
 
-            # 2. GUARDAR FOTOS ESPECÍFICAS DE ESTE ÍTEM (NUEVA UBICACIÓN)
-            # El frontend ahora debe enviar las fotos dentro de cada item
+            # 2. Insertar las fotos extrayendo solo el Base64 (Evita el error 'dict')
             fotos_item = item.get('fotos', []) 
             for foto_obj in fotos_item:
-                cursor.execute("""
-                    INSERT INTO fotos_registro (id_registro, imagen_base64, description) 
-                    VALUES (%s, %s, %s)
-                """, (id_item_actual, foto_obj.get('file_data'), foto_obj.get('description')))
-
-            # 3. GUARDAR VIDEOS ESPECÍFICOS DE ESTE ÍTEM
-            videos_item = item.get('videos', [])
-            for video_obj in videos_item:
-                cursor.execute("""
-                    INSERT INTO videos_registro (id_registro, video_base64, description) 
-                    VALUES (%s, %s, %s)
-                """, (id_item_actual, video_obj.get('file_data'), video_obj.get('description')))
+                # Extraemos el string de la imagen para que no sea un diccionario
+                file_data = foto_obj.get('file_data')
+                
+                if file_data:
+                    cursor.execute("""
+                        INSERT INTO fotos_inspeccion_items (id_registro, imagen_base64) 
+                        VALUES (%s, %s)
+                    """, (id_item_actual, file_data))
 
         conn.commit()
-        return jsonify({"mensaje": "¡Reporte guardado con imágenes por ítem!"}), 200
+        return jsonify({"mensaje": "¡Reporte con múltiples ítems y fotos guardado!"}), 200
 
     except Exception as e:
         if conn: conn.rollback()
-        print(f"Error: {str(e)}")
+        print(f"❌ Error guardando registro: {str(e)}")
         return jsonify({"error": str(e)}), 500
     finally:
         if conn: conn.close()
